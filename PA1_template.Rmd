@@ -1,25 +1,89 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Activity Monitoring"
+author: "Cesar Garcia"
+date: "January 22, 2017"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-## Loading and preprocessing the data
+## Introduction (excerpt from assignment)
 
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a [Fitbit](http://fitbit.com), [Nike Fuelband](http://www.nike.com/us/en_us/c/nikeplus-fuelband), or [Jawbone Up](https://jawbone.com/up). These type of devices are part of the "quantified self" movement -- a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
 
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
-## What is mean total number of steps taken per day?
+## Read the data
+```{r}
+activity <- read.csv(unz("activity.zip","activity.csv"))
+```
 
+## Mean total number of steps taken per day
 
+### Histogram of steps taken each day
 
-## What is the average daily activity pattern?
+```{r}
+dailysteps <- aggregate(activity$steps,by=list(Day=activity$date),FUN=sum)
+hist(dailysteps$x)
+```
 
+### Mean and Median total number of steps taken each day
 
+```{r}
+meansteps <- mean(dailysteps$x,na.rm = TRUE)
+meadiansteps <- median(dailysteps$x,na.rm = TRUE)
+```
 
-## Imputing missing values
+The mean number of steps taken each day is `r format(meansteps,big.mark=",",scientific=FALSE)` and the number of median steps taken each day is `r format(meadiansteps,big.mark=",",scientific=FALSE)`
 
+### Average daily activity pattern
 
+-What is the average daily pattern?-
+```{r}
+avgsteps <- aggregate(activity$steps,by=list(Interval=activity$interval),FUN=mean,na.rm=TRUE)
+plot(avgsteps$Interval,avgsteps$x,type="l")
+```
 
-## Are there differences in activity patterns between weekdays and weekends?
+- Imputting missing values-
+```{r}
+missingsteps <- sum(is.na(activity$steps))
+```
+
+There are `r format(missingsteps,big.mark=",",scientific=FALSE)` in the dataset.  In order to have a better picture of the data, the missing values in steps will be replaced by the mean value of the steps in that interval.
+
+```{R}
+avgintervals <- aggregate(activity$steps,by=list(interval=activity$interval),FUN=mean,na.rm=TRUE)
+newactivity <- activity
+for(i in 1:nrow(newactivity)) {
+  if(is.na(newactivity$steps[i]) == TRUE) {
+    newactivity$steps[i] = avgintervals[avgintervals$interval==newactivity$interval[i],2]
+    
+  }
+}
+```
+
+- Histogram of daily steps with NAs replaced -
+```{r}
+dailysteps <- aggregate(newactivity$steps,by=list(Day=newactivity$date),FUN=sum)
+hist(dailysteps$x)
+```
+
+- Mean and Median total number of steps taken each day -
+
+```{r}
+meanstepsnew <- mean(dailysteps$x,na.rm = TRUE)
+meadianstepsnew <- median(dailysteps$x,na.rm = TRUE)
+```
+
+The mean number of steps taken each day of the new data set is `r format(meanstepsnew,big.mark=",",scientific=FALSE)` and the number of median steps taken each day is `r format(meadianstepsnew,big.mark=",",scientific=FALSE)`.
+
+Replacing the NAs affects the daily steps mean by `r meansteps - meanstepsnew` and the median by `r meadiansteps - meadianstepsnew`
+
+```{r}
+newactivity$period <- ifelse(weekdays(as.Date(newactivity$date),abbreviate=TRUE) %in% c("Sat","Sun"),"Weekend","Weekday")
+
+library(lattice)
+ xyplot(steps~interval|period,type='l',layout=c(1,2),xlab='Interval',ylab='Number of Steps',data=newactivity)
+ 
