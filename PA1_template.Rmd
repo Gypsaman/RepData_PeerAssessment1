@@ -28,6 +28,9 @@ activity <- read.csv(unz("activity.zip","activity.csv"))
 dailysteps <- aggregate(activity$steps,by=list(Day=activity$date),FUN=sum)
 hist(dailysteps$x)
 ```
+### 5 minute interval with max average steps
+
+
 
 ### Mean and Median total number of steps taken each day
 
@@ -45,6 +48,11 @@ The mean number of steps taken each day is `r format(meansteps,big.mark=",",scie
 avgsteps <- aggregate(activity$steps,by=list(Interval=activity$interval),FUN=mean,na.rm=TRUE)
 plot(avgsteps$Interval,avgsteps$x,type="l")
 ```
+
+```{r}
+maxInterval <- avgsteps$Interval[which.max(avgsteps$x)]
+```
+The highest average step count happened during interval `r maxInterval`
 
 - Imputting missing values-
 ```{r}
